@@ -163,6 +163,8 @@ public class FormScraping extends javax.swing.JFrame {
 
         setButtonsEnabled(false);
         progressPanel.start("Obteniendo datos de juzgados...");
+        getContentPane().revalidate();
+        getContentPane().repaint();
 
         SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             @Override
@@ -175,6 +177,7 @@ public class FormScraping extends javax.swing.JFrame {
             @Override
             protected void done() {
                 progressPanel.stop();
+                getContentPane().repaint();
                 setButtonsEnabled(true);
             }
         };
@@ -184,6 +187,8 @@ public class FormScraping extends javax.swing.JFrame {
     private void btnTodosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTodosActionPerformed
         setButtonsEnabled(false);
         progressPanel.start("Obteniendo partidos judiciales de todas las provincias...");
+        getContentPane().revalidate();
+        getContentPane().repaint();
 
         SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             @Override
@@ -196,6 +201,7 @@ public class FormScraping extends javax.swing.JFrame {
             @Override
             protected void done() {
                 progressPanel.stop();
+                getContentPane().repaint();
                 setButtonsEnabled(true);
             }
         };
@@ -205,6 +211,8 @@ public class FormScraping extends javax.swing.JFrame {
     private void btnDemarcacionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDemarcacionActionPerformed
         setButtonsEnabled(false);
         progressPanel.start("Obteniendo demarcación judicial...");
+        getContentPane().revalidate();
+        getContentPane().repaint();
 
         SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             @Override
@@ -217,6 +225,7 @@ public class FormScraping extends javax.swing.JFrame {
             @Override
             protected void done() {
                 progressPanel.stop();
+                getContentPane().repaint();
                 setButtonsEnabled(true);
             }
         };

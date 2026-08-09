@@ -6,23 +6,22 @@ import java.awt.geom.Arc2D;
 
 /**
  * Panel con indicador de progreso circular animado y mensaje de estado.
- * Se integra directamente en la ventana principal.
+ * Siempre está en el layout; solo pinta contenido cuando está activo.
  */
 public class CircularProgressPanel extends JPanel implements ProgressReporter {
 
     private volatile boolean running = false;
     private volatile boolean cancelled = false;
     private String message = "";
-    private int progress = -1; // -1 = indeterminado
+    private int progress = -1;
     private Timer animationTimer;
     private int arcAngle = 0;
 
     public CircularProgressPanel() {
-        setOpaque(true);
-        setBackground(new Color(245, 245, 245));
-        setPreferredSize(new Dimension(Integer.MAX_VALUE, 55));
-        setMinimumSize(new Dimension(200, 55));
-        setVisible(false);
+        setOpaque(false);
+        setMinimumSize(new Dimension(0, 55));
+        setPreferredSize(new Dimension(1000, 55));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
     }
 
     public void start(String initialMessage) {
@@ -30,12 +29,6 @@ public class CircularProgressPanel extends JPanel implements ProgressReporter {
         this.cancelled = false;
         this.running = true;
         this.progress = -1;
-
-        SwingUtilities.invokeLater(() -> {
-            setVisible(true);
-            revalidate();
-            repaint();
-        });
 
         if (animationTimer == null) {
             animationTimer = new Timer(50, e -> {
@@ -45,6 +38,7 @@ public class CircularProgressPanel extends JPanel implements ProgressReporter {
             animationTimer.setCoalesce(true);
         }
         animationTimer.start();
+        repaint();
     }
 
     public void stop() {
@@ -52,11 +46,7 @@ public class CircularProgressPanel extends JPanel implements ProgressReporter {
         if (animationTimer != null) {
             animationTimer.stop();
         }
-        SwingUtilities.invokeLater(() -> {
-            setVisible(false);
-            revalidate();
-            repaint();
-        });
+        repaint();
     }
 
     @Override
@@ -81,27 +71,36 @@ public class CircularProgressPanel extends JPanel implements ProgressReporter {
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    public Dimension getPreferredSize() {
+        return new Dimension(getParent() != null ? getParent().getWidth() : 1000, 55);
+    }
 
-        if (!running && !isVisible()) return;
+    @Override
+    protected void paintComponent(Graphics g) {
+        if (!running) return;
 
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        int panelWidth = getWidth();
-        int panelHeight = getHeight();
+        int w = getWidth();
+        int h = getHeight();
 
-        // Dibujar círculo de progreso
-        int circleSize = Math.min(panelHeight - 10, 40);
-        int circleX = 15;
-        int circleY = (panelHeight - circleSize) / 2;
+        // Fondo semitransparente
+        g2d.setColor(new Color(240, 240, 240, 200));
+        g2d.fillRect(0, 0, w, h);
 
-        // Fondo del círculo
+        // Línea separadora superior
+        g2d.setColor(new Color(0, 120, 215));
+        g2d.fillRect(0, 0, w, 2);
+
+        // Círculo de progreso
+        int circleSize = Math.min(h - 16, 38);
+        int circleX = 20;
+        int circleY = (h - circleSize) / 2;
+
         g2d.setColor(new Color(220, 220, 220));
         g2d.fillOval(circleX, circleY, circleSize, circleSize);
 
-        // Arco animado
         g2d.setColor(new Color(0, 120, 215));
         g2d.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         int arcSize = circleSize - 6;
@@ -115,7 +114,6 @@ public class CircularProgressPanel extends JPanel implements ProgressReporter {
             g2d.draw(new Arc2D.Double(arcX, arcY, arcSize, arcSize, arcAngle, 90, Arc2D.OPEN));
         }
 
-        // Texto del porcentaje si es determinado
         if (progress >= 0) {
             g2d.setColor(new Color(60, 60, 60));
             g2d.setFont(new Font("Arial", Font.BOLD, 10));
@@ -126,22 +124,22 @@ public class CircularProgressPanel extends JPanel implements ProgressReporter {
             g2d.drawString(pct, textX, textY);
         }
 
-        // Mensaje de estado
+        // Mensaje
         g2d.setColor(new Color(50, 50, 50));
-        g2d.setFont(new Font("Arial", Font.PLAIN, 13));
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 13));
         int textX = circleX + circleSize + 12;
-        int maxWidth = panelWidth - textX - 10;
+        int maxWidth = w - textX - 10;
 
-        if (message != null && !message.isEmpty()) {
+        if (message != null && !message.isEmpty() && maxWidth > 0) {
             String drawText = message;
             FontMetrics fm = g2d.getFontMetrics();
-            if (maxWidth > 0 && fm.stringWidth(drawText) > maxWidth) {
+            if (fm.stringWidth(drawText) > maxWidth) {
                 while (fm.stringWidth(drawText + "...") > maxWidth && drawText.length() > 0) {
                     drawText = drawText.substring(0, drawText.length() - 1);
                 }
                 drawText += "...";
             }
-            int textY = (panelHeight + fm.getAscent() - fm.getDescent()) / 2;
+            int textY = (h + fm.getAscent() - fm.getDescent()) / 2;
             g2d.drawString(drawText, textX, textY);
         }
     }
