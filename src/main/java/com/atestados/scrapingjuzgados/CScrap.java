@@ -141,6 +141,8 @@ void scrapSitioWeb(String url, JTable resultado, ProgressReporter progressReport
                 SwingUtilities.invokeLater(() -> {
                     DefaultTableModel modelo = (DefaultTableModel) resultado.getModel();
                     modelo.addRow(new Object[]{municipio, juzgado, telefono, direccion, cp});
+                    int lastRow = resultado.getRowCount() - 1;
+                    resultado.scrollRectToVisible(resultado.getCellRect(lastRow, 0, true));
                 });
 
                 // Escribir en SQL

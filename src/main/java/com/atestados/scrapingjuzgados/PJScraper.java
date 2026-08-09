@@ -150,6 +150,8 @@ public class PJScraper {
                         SwingUtilities.invokeLater(() -> {
                             DefaultTableModel modelo = (DefaultTableModel) resultado.getModel();
                             modelo.addRow(new Object[]{nombreProvincia, finalJuzgado, finalMunicipio});
+                            int lastRow = resultado.getRowCount() - 1;
+                            resultado.scrollRectToVisible(resultado.getCellRect(lastRow, 0, true));
                         });
 
                         String insertSQL = String.format(
