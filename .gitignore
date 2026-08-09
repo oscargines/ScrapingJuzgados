@@ -1,0 +1,33 @@
+# Compiled class files
+target/
+*.class
+
+# Package files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# IDE files
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+nbproject/
+build/
+nbbuild/
+nbdist/
+
+# Maven
+.mvn/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Generated SQL (optional, uncomment if not tracked)
+# juzgados_data.sql
+# partidos_judiciales.sql
