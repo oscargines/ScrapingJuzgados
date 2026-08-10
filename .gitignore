@@ -12,6 +12,7 @@ target/
 
 # IDE files
 .idea/
+.vscode/
 *.iml
 .project
 .classpath
@@ -28,6 +29,6 @@ nbdist/
 .DS_Store
 Thumbs.db
 
-# Generated SQL (optional, uncomment if not tracked)
-# juzgados_data.sql
-# partidos_judiciales.sql
+# Generated SQL (resultado del scraping; se regeneran en cada ejecución)
+juzgados_data.sql
+partidos_judiciales.sql

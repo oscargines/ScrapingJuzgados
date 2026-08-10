@@ -12,9 +12,9 @@ package com.atestados.scrapingjuzgados;
 public class ScrapingJuzgados {
 
     public static void main(String[] args) {
-        FormScraping objetForm = new FormScraping();        
+        FormScraping.installTheme();
+        FormScraping objetForm = new FormScraping();
         objetForm.setVisible(true);
-        objetForm.setResizable(false);
         objetForm.setLocationRelativeTo(null);
     }
 }

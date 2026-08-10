@@ -7,6 +7,7 @@ import org.jsoup.select.Elements;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -14,13 +15,13 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.*;
 
 /**
- * Clase para realizar scraping de partidos judiciales y sus municipios desde el
- * sitio web del CGPJ. Procesa la información y genera un archivo SQL con los
- * datos obtenidos.
+ * Clase para realizar scraping de sedes judiciales (órganos judiciales) desde
+ * el sitio web del CGPJ. Procesa la información y genera un archivo SQL con
+ * los datos insertados en la tabla `sedes`.
  */
 public class PJScraper {
 
-    private static final String OUTPUT_FILE = "partidos_judiciales.sql";
+    private static final String OUTPUT_FILE = "juzgados_data.sql";
     private static final String BASE_URL = "https://www.poderjudicial.es/cgpj/es/Servicios/Directorio/ch.Directorio-de-Organos-Judiciales.formato3/?provincia=";
     private static final String[] PROVINCIAS = {
         "Araba/Álava", "Albacete", "Alicante/Alacant", "Almería", "Ávila",
@@ -37,61 +38,56 @@ public class PJScraper {
     };
 
     /**
-     * Obtiene todos los partidos judiciales de todas las provincias (ID 1-52).
+     * Obtiene todas las sedes de todas las provincias (ID 1-52).
+     * Se ejecuta de forma síncrona en el hilo llamante (el SwingWorker del
+     * formulario se encarga del threading).
      *
      * @param resultado Tabla donde se mostrarán los resultados.
      * @param progressReporter Diálogo para mostrar el progreso de la operación.
      */
     public void obtenerTodosPartidos(JTable resultado, ProgressReporter progressReporter) {
-        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                long startTime = System.currentTimeMillis();
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(OUTPUT_FILE))) {
-                    writer.write("CREATE TABLE IF NOT EXISTS partidos_judiciales (\n" +
-                                "    id INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-                                "    provincia TEXT,\n" +
-                                "    partido_judicial TEXT,\n" +
-                                "    municipio TEXT\n" +
-                                ");\n\n");
+        long startTime = System.currentTimeMillis();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(OUTPUT_FILE))) {
+            writer.write("CREATE TABLE IF NOT EXISTS sedes (\n" +
+                        "    id_juzgado INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                        "    municipio TEXT,\n" +
+                        "    nombre TEXT,\n" +
+                        "    direccion TEXT,\n" +
+                        "    telefono TEXT,\n" +
+                        "    codigo_postal TEXT\n" +
+                        ");\n\n");
 
-                    disableSSLValidation();
+            disableSSLValidation();
 
-                    for (int provinciaId = 1; provinciaId <= 52 && !progressReporter.isCancelled(); provinciaId++) {
-                        String nombreProvincia = PROVINCIAS[provinciaId - 1];
-                        progressReporter.setMessage(String.format("Procesando provincia %d/52: %s", provinciaId, nombreProvincia));
-                        System.out.printf("\n=== PROCESANDO PROVINCIA %d/52: %s ===\n", provinciaId, nombreProvincia);
+            for (int provinciaId = 1; provinciaId <= 52 && !progressReporter.isCancelled(); provinciaId++) {
+                String nombreProvincia = PROVINCIAS[provinciaId - 1];
+                progressReporter.setMessage(String.format("Procesando provincia %d/52: %s", provinciaId, nombreProvincia));
+                System.out.printf("\n=== PROCESANDO PROVINCIA %d/52: %s ===\n", provinciaId, nombreProvincia);
 
-                        obtenerPartidosDeProvincia(provinciaId, nombreProvincia, resultado, progressReporter, writer);
+                obtenerPartidosDeProvincia(provinciaId, nombreProvincia, resultado, progressReporter, writer);
 
-                        if (provinciaId < 52 && !progressReporter.isCancelled()) {
-                            TimeUnit.SECONDS.sleep(2);
-                        }
-                    }
-
-                    if (!progressReporter.isCancelled()) {
-                        long tiempoTotal = (System.currentTimeMillis() - startTime) / 1000;
-                        progressReporter.setMessage("¡Completado! Tiempo: " + tiempoTotal + " segundos");
-                        System.out.println("\nSCRAPING COMPLETADO - Tiempo total: " + tiempoTotal + " segundos");
-                    }
-                } catch (Exception e) {
-                    System.err.println("ERROR en el proceso general: " + e.getMessage());
-                    SwingUtilities.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(null, "Error general: " + e.getMessage());
-                    });
+                if (provinciaId < 52 && !progressReporter.isCancelled()) {
+                    TimeUnit.SECONDS.sleep(2);
                 }
-                return null;
             }
 
-            @Override
-            protected void done() {
+            if (!progressReporter.isCancelled()) {
+                long tiempoTotal = (System.currentTimeMillis() - startTime) / 1000;
+                String ruta = new File(OUTPUT_FILE).getAbsolutePath();
+                progressReporter.setMessage("¡Completado! Tiempo: " + tiempoTotal + " segundos - Script SQL generado en: " + ruta);
+                System.out.println("\nSCRAPING COMPLETADO - Tiempo total: " + tiempoTotal + " segundos");
+                System.out.println("Script SQL generado en: " + ruta);
             }
-        };
-        worker.execute();
+        } catch (Exception e) {
+            System.err.println("ERROR en el proceso general: " + e.getMessage());
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(null, "Error general: " + e.getMessage());
+            });
+        }
     }
 
     /**
-     * Obtiene todos los juzgados de una provincia específica, procesando todas las páginas.
+     * Obtiene todas las sedes de una provincia específica, procesando todas las páginas.
      */
     private void obtenerPartidosDeProvincia(int provinciaId, String nombreProvincia, JTable resultado, ProgressReporter progressReporter, BufferedWriter writer) {
         try {
@@ -112,7 +108,7 @@ public class PJScraper {
             SwingUtilities.invokeLater(() -> {
                 DefaultTableModel modelo = (DefaultTableModel) resultado.getModel();
                 if (modelo.getColumnCount() == 0) {
-                    modelo.setColumnIdentifiers(new Object[]{"Provincia", "Partido Judicial", "Municipios"});
+                    modelo.setColumnIdentifiers(new Object[]{"Provincia", "Órgano Judicial", "Municipio", "Estado"});
                 }
             });
 
@@ -142,6 +138,9 @@ public class PJScraper {
 
                     String municipio = fila.select("th[data-cabecera=Municipio] span").text();
                     String juzgado = fila.select("td[data-cabecera=Juzgado] span a").text();
+                    String telefono = fila.select("td[data-cabecera=Teléfono/s] span").html().replace("<br>", ", ");
+                    String direccion = fila.select("td[data-cabecera=Dirección] span").text();
+                    String cp = fila.select("td[data-cabecera=Código Postal] span").text();
 
                     if (!municipio.isEmpty() && !juzgado.isEmpty()) {
                         final String finalMunicipio = municipio;
@@ -149,16 +148,19 @@ public class PJScraper {
 
                         SwingUtilities.invokeLater(() -> {
                             DefaultTableModel modelo = (DefaultTableModel) resultado.getModel();
-                            modelo.addRow(new Object[]{nombreProvincia, finalJuzgado, finalMunicipio});
+                            modelo.addRow(new Object[]{nombreProvincia, finalJuzgado, finalMunicipio, "Completado"});
                             int lastRow = resultado.getRowCount() - 1;
                             resultado.scrollRectToVisible(resultado.getCellRect(lastRow, 0, true));
+                            progressReporter.onRowAdded(nombreProvincia, resultado.getRowCount());
                         });
 
                         String insertSQL = String.format(
-                                "INSERT INTO partidos_judiciales (provincia, partido_judicial, municipio) VALUES ('%s', '%s', '%s');\n",
-                                nombreProvincia.replace("'", "''"),
+                                "INSERT INTO sedes (municipio, nombre, direccion, telefono, codigo_postal) VALUES ('%s', '%s', '%s', '%s', '%s');\n",
+                                municipio.replace("'", "''"),
                                 juzgado.replace("'", "''"),
-                                municipio.replace("'", "''")
+                                direccion.replace("'", "''"),
+                                telefono.replace("'", "''"),
+                                cp.replace("'", "''")
                         );
                         writer.write(insertSQL);
                         System.out.println("Juzgado: " + juzgado + " | Municipio: " + municipio);

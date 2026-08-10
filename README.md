@@ -6,7 +6,7 @@ Aplicación de escritorio en Java que realiza **scraping** del directorio del Po
 
 - **Scraping de Órganos Judiciales**: Recopila nombre, municipio, teléfono, dirección y código postal de cada juzgado.
 - **Scraping de Partidos Judiciales**: Obtiene la estructura de partidos judiciales y sus municipios por provincia.
-- **Generación de SQL**: Crea archivos SQL con tablas `sedes` y `partidos_judiciales` listas para importar.
+- **Generación de SQL**: Crea un archivo SQL con la tabla `sedes` lista para importar.
 - **Progreso Visual**: Indicador circular animado integrado en la ventana con mensajes en tiempo real (ej: *"Procesando provincia 28/52: Madrid"*).
 - **52 Provincias**: Soporta todas las provincias españolas, incluidas Ceuta y Melilla.
 - **Paginación Automática**: Maneja automáticamente las páginas de resultados del sitio web.
@@ -51,11 +51,10 @@ ScrapingJuzgados/
 │   ├── CircularProgressPanel.java # Panel de progreso circular integrado
 │   ├── ProgressReporter.java      # Interfaz para reportar progreso
 │   ├── CScrap.java                # Scraper de órganos judiciales (datos completos)
-│   ├── PJScraper.java             # Scraper de partidos judiciales
+│   ├── PJScraper.java             # Scraper de sedes judiciales (misma salida juzgados_data.sql)
 │   └── SeleniumScraper.java       # Scraper alternativo con Selenium
 ├── creaciontablasinserciondatos.sql # Script SQL: tabla tipos_juzgados
-├── juzgados_data.sql              # Datos: órganos judiciales (generado)
-├── partidos_judiciales.sql        # Datos: partidos judiciales (generado)
+├── juzgados_data.sql              # Datos: sedes (órganos judiciales) (generado)
 └── pom.xml                        # Configuración Maven
 ```
 
@@ -70,14 +69,6 @@ ScrapingJuzgados/
 | direccion | TEXT | Dirección postal |
 | telefono | TEXT | Teléfono/s de contacto |
 | codigo_postal | TEXT | Código postal |
-
-### `partidos_judiciales`
-| Columna | Tipo | Descripción |
-|---------|------|-------------|
-| id | INTEGER | ID autoincremental |
-| provincia | TEXT | Nombre de la provincia |
-| partido_judicial | TEXT | Nombre del partido judicial |
-| municipio | TEXT | Municipio asociado |
 
 ### `tipos_juzgados` (Catálogo)
 | Columna | Tipo | Descripción |
